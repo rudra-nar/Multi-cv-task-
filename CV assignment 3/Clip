@@ -1,0 +1,54 @@
+import subprocess, sys
+import torch
+import torchvision
+import transformers
+import PIL
+
+import sklearn
+from PIL import Image
+
+from transformers import CLIPProcessor, CLIPModel
+#hugging face lib
+
+
+print(torch.cuda.is_available())
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+CLIP_MODEL_NAME = "openai/clip-vit-base-patch32"
+
+clip_model = CLIPModel.from_pretrained(CLIP_MODEL_NAME).to(device)
+processor = CLIPProcessor.from_pretrained(CLIP_MODEL_NAME)
+
+
+img_path = r"C:\Users\Asus\Documents\CV assignment 3\sample_image.jpg"
+image = Image.open(img_path).convert("RGB")
+
+#inputs = processor(text=["a photo of a cat", "a photo of a dog"], images=image, return_tensors="pt", padding=True)
+#outputs = model(**inputs)
+#logits_per_image = outputs.logits_per_image # this is the image-text similarity score
+#probs = logits_per_image.softmax(dim=1) # we can take the softmax to get the label probabilities
+
+text = [
+    "A man holds a large Dog.",
+    "He wears a white shirt.",
+    "His trousers are a light grey.",
+    "The dog has grey fur.",
+    "A white patch marks the dog's chest.",
+    "They stand on a wooden floor.",
+    "full bookshelf sits behind them.",
+    "The man wears brown leather shoes.",
+    "A white door is in the background.",
+    "The dog looks very relaxed."]
+inputs = processor(text=text, images=image, return_tensors="pt", padding=True)
+inputs = {k: v.to(device) for k, v in inputs.items()}
+with torch.no_grad():
+  output = clip_model(**inputs)
+logists_per_image = output.logits_per_image
+probs = logists_per_image.softmax(dim=1)
+
+for i in range(len(text)):
+  print(f"{text[i]}: {probs[0][i].item()}")
+
+
+##Clips is more confident about its best caption they are supposed to show the relative rating 
+##because of the soft max 
